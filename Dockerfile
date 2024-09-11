@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3-labs
-ARG PG_MAJOR=16
+ARG PG_MAJOR=17rc1
 FROM postgres:${PG_MAJOR}
 
 ENV WHERE_AM_I=docker
@@ -25,7 +25,7 @@ RUN set -e; \
 
 RUN set -e; \
     mkdir -p /build/timescaledb; \
-    git clone https://github.com/timescale/timescaledb.git --branch 2.16.1 /build/timescaledb; \
+    git clone https://github.com/timescale/timescaledb.git --branch main /build/timescaledb; \
     cd /build/timescaledb;  \
     bash ./bootstrap; \
     cd build && make; \

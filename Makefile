@@ -1,4 +1,4 @@
-PG_MAJOR?=16
+PG_MAJOR?=17rc1
 PG_BIN?="/usr/lib/postgresql/$(PG_MAJOR)/bin"
 
 .PHONY: default

@@ -7,7 +7,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-DEFAULT_PG_MAJOR = "16"
+DEFAULT_PG_MAJOR = "17rc1"
 
 HELP = """Available targets:
 - help              displays this message and exits
@@ -54,8 +54,8 @@ def prior_versions() -> list[str]:
     return versions()[1:] if len(versions()) > 1 else []
 
 
-def pg_major() -> int:
-    return int(os.getenv("PG_MAJOR", DEFAULT_PG_MAJOR))
+def pg_major() -> str:
+    return os.getenv("PG_MAJOR", DEFAULT_PG_MAJOR)
 
 
 def project_dir() -> Path:
