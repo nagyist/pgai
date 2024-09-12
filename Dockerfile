@@ -27,7 +27,7 @@ RUN set -e; \
     mkdir -p /build/timescaledb; \
     git clone https://github.com/timescale/timescaledb.git --branch main /build/timescaledb; \
     cd /build/timescaledb;  \
-    bash ./bootstrap; \
+    bash ./bootstrap -DEXPERIMENTAL=ON; \
     cd build && make; \
     make install; \
     rm -rf /build/timescaledb

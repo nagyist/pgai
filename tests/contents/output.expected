@@ -65,8 +65,16 @@ CREATE EXTENSION
  table ai.migration
  table ai.vectorizer
  table ai.vectorizer_errors
+ type ai.migration
+ type ai.migration[]
+ type ai.vectorizer
+ type ai.vectorizer[]
+ type ai.vectorizer_errors
+ type ai.vectorizer_errors[]
+ type ai.vectorizer_status
+ type ai.vectorizer_status[]
  view ai.vectorizer_status
-(62 rows)
+(70 rows)
 
                                                               Table "ai.migration"
        Column       |           Type           | Collation | Nullable |      Default      | Storage  | Compression | Stats target | Description 
