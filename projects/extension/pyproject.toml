@@ -8,7 +8,7 @@ dynamic = ["version"]
 requires-python = ">=3.10"
 
 dependencies= [
-    "openai==1.44.0",
+    "openai==1.56.0",
     "tiktoken==0.7.0",
     "ollama==0.4.5",
     "anthropic==0.44.0",
@@ -16,6 +16,8 @@ dependencies= [
     "backoff==2.2.1",
     "voyageai==0.3.1",
     "datasets==3.1.0",
+    "litellm==1.58.2",
+    "google-cloud-aiplatform==1.74.0", # required for vertexAI (don't know why litellm doesn't include this)
 ]
 
 [dependency-groups]
@@ -88,9 +90,19 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.ruff.lint]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
-select = ["E4", "E7", "E9", "F"]
-ignore = []
+select = [
+    "E",    # pycodestyle
+    "F",    # Pyflakes
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+#    "SIM",  # flake8-simplify
+    "I",    # isort
+    "ARG",  # unused arguments
+    "W291", # trailing whitespace
+    "PIE",  # print statements
+    "Q"     # flakes8-quote
+]
+ignore = ["E501", "W291", "ARG001"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -101,3 +113,5 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.uv]
 reinstall-package = ["pgai"]
+
+

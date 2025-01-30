@@ -1,14 +1,20 @@
 import os
 import time
-import requests
+
 import psycopg
 import pytest
-
+import requests
 
 # skip tests in this module if disabled
 enable_ollama_tests = os.getenv("OLLAMA_HOST")
 if not enable_ollama_tests or enable_ollama_tests == "0":
     pytest.skip(allow_module_level=True)
+
+
+def where_am_i() -> str:
+    if "WHERE_AM_I" in os.environ and os.environ["WHERE_AM_I"] == "docker":
+        return "docker"
+    return "host"
 
 
 def wait_for_model_download(host: str, model: str, timeout: int = 300) -> None:
@@ -19,6 +25,13 @@ def wait_for_model_download(host: str, model: str, timeout: int = 300) -> None:
         model: Name of the model to wait for
         timeout: Maximum time to wait in seconds
     """
+
+    # if we are running the tests from a development host with the database in a docker container
+    # then the OLLAMA_HOST env var will not work for pulling models
+    # attempting to use the env var will spin wait for 5 minutes. super annoying
+    if "host.docker.internal" in host and where_am_i() == "host":
+        host = "http://localhost:11434"
+
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
@@ -262,6 +275,87 @@ def test_ollama_chat_complete_image(cur_with_ollama_host):
     """)
     actual = cur_with_ollama_host.fetchone()[0]
     assert actual is not None
+
+
+def test_ollama_chat_complete_tool_use(cur_with_ollama_host):
+    cur_with_ollama_host.execute("""
+        select ai.ollama_chat_complete
+        ( 'llama3.2:1b'
+        , jsonb_build_array
+          ( jsonb_build_object('role', 'system', 'content', 'you are a helpful assistant')
+          , jsonb_build_object('role', 'user', 'content', 'What is the weather today in Birmingham, Alabama?')
+          )
+        , tools=> $json$
+              [
+                {
+                  "type": "function",
+                  "function": {
+                    "name": "get_current_weather",
+                    "description": "Get the current weather for a location",
+                    "parameters": {
+                      "type": "object",
+                      "properties": {
+                        "location": {
+                          "type": "string",
+                          "description": "The location to get the weather for, e.g. San Francisco, CA"
+                        },
+                        "format": {
+                          "type": "string",
+                          "description": "The format to return the weather in, e.g. 'celsius' or 'fahrenheit'",
+                          "enum": ["celsius", "fahrenheit"]
+                        }
+                      },
+                      "required": ["location", "format"]
+                    }
+                  }
+                }
+              ]
+          $json$::jsonb
+        )
+    """)
+    actual = cur_with_ollama_host.fetchone()[0]
+    assert (
+        actual["message"]["tool_calls"][0]["function"]["name"] == "get_current_weather"
+        and actual["done_reason"] == "stop"
+        and actual["done"] is True
+    )
+
+
+def test_ollama_chat_complete_structured_output(cur_with_ollama_host):
+    import json
+
+    cur_with_ollama_host.execute("""
+        select ai.ollama_chat_complete
+        ( 'llama3.2:1b'
+        , jsonb_build_array
+          ( jsonb_build_object('role', 'system', 'content', 'you are a helpful assistant')
+          , jsonb_build_object('role', 'user', 'content', 'Ollama is 22 years old and busy saving the world. Return a JSON object with the age and availability.')
+          )
+        , response_format=> $json$
+            {
+                "type": "object",
+                "properties": {
+                    "age": {
+                        "type": "integer"
+                    },
+                    "available": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "age",
+                    "available"
+                ]
+            }
+          $json$::jsonb
+        )
+    """)
+    actual = cur_with_ollama_host.fetchone()[0]
+    assert (
+        json.loads(actual["message"]["content"])["age"] == 22
+        and actual["done_reason"] == "stop"
+        and actual["done"] is True
+    )
 
 
 def test_ollama_ps(cur, ollama_host):

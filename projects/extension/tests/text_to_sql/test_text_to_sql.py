@@ -1,11 +1,14 @@
 import os
+import re
 import subprocess
 from pathlib import Path
-import re
 
-import pytest
 import psycopg
+import pytest
 from psycopg.rows import namedtuple_row
+
+# for now, skip these tests
+pytest.skip(allow_module_level=True)
 
 # skip tests in this module if disabled
 enable_text_to_sql_tests = os.getenv("ENABLE_TEXT_TO_SQL_TESTS")

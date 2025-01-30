@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import hashlib
+import os
 import platform
 import re
-import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import textwrap
 from pathlib import Path
-
 
 HELP = """Available targets:
 - help             displays this message and exits
@@ -45,6 +44,7 @@ HELP = """Available targets:
 def versions() -> list[str]:
     # ADD NEW VERSIONS TO THE FRONT OF THIS LIST! STAY SORTED PLEASE
     return [
+        "0.7.1-dev",
         "0.7.0",  # released
         "0.6.0",  # released
         "0.5.0",  # released
@@ -121,7 +121,9 @@ def idempotent_sql_dir() -> Path:
 
 
 def idempotent_sql_files() -> list[Path]:
-    paths = [x for x in idempotent_sql_dir().glob("*.sql")]
+    paths = [
+        x for x in idempotent_sql_dir().glob("*.sql") if not x.name.startswith("x")
+    ]
     paths.sort()
     return paths
 
@@ -131,7 +133,9 @@ def incremental_sql_dir() -> Path:
 
 
 def incremental_sql_files() -> list[Path]:
-    paths = [x for x in incremental_sql_dir().glob("*.sql")]
+    paths = [
+        x for x in incremental_sql_dir().glob("*.sql") if not x.name.startswith("x")
+    ]
     paths.sort()
     return paths
 
@@ -734,7 +738,7 @@ def check_requirements() -> None:
 
         from difflib import unified_diff
 
-        with open(lock_file, "r") as f1, open(tmp_file.name, "r") as f2:
+        with open(lock_file) as f1, open(tmp_file.name) as f2:
             # Skip the first 3 lines when reading both files since the contain a line with the file name
             # which will always be different
             lock_contents = f1.readlines()[3:]
@@ -770,6 +774,18 @@ def docker_run() -> None:
             networking,
             f"--mount type=bind,src={ext_dir()},dst=/pgai",
             "--mount type=volume,dst=/pgai/.venv",
+            "-e OPENAI_API_KEY",
+            "-e COHERE_API_KEY",
+            "-e MISTRAL_API_KEY",
+            "-e VOYAGE_API_KEY",
+            "-e HUGGINGFACE_API_KEY",
+            "-e AZURE_API_KEY",
+            "-e AZURE_API_BASE",
+            "-e AZURE_API_VERSION",
+            "-e AWS_ACCESS_KEY_ID",
+            "-e AWS_REGION_NAME",
+            "-e AWS_SECRET_ACCESS_KEY",
+            "-e VERTEX_CREDENTIALS",
             "-e TEST_ENV_SECRET=super_secret",
             "pgai-ext",
             "-c shared_preload_libraries='timescaledb, pgextwlist'",

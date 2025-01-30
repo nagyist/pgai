@@ -166,42 +166,43 @@ This section will walk you through the steps to get started with pgai and Ollama
     
 # Features 
 
-**Working with embeddings generated from your data:**
+## Work with embeddings generated from your data
 * Automatically create and sync vector embeddings for your data ([learn more](#automatically-create-and-sync-llm-embeddings-for-your-data))
 * Search your data using vector and semantic search ([learn more](#search-your-data-using-vector-and-semantic-search))
 * Implement Retrieval Augmented Generation inside a single SQL statement ([learn more](#implement-retrieval-augmented-generation-inside-a-single-sql-statement))
 * Perform high-performance, cost-efficient ANN search on large vector workloads with [pgvectorscale](https://github.com/timescale/pgvectorscale), which complements pgvector.
 
-**Leverage LLMs for data processing tasks:**
+## Leverage LLMs for data processing tasks
 * Retrieve LLM chat completions from models like Claude Sonnet 3.5, OpenAI GPT4o, Cohere Command, and Llama 3 (via Ollama). ([learn more](#usage-of-pgai))
 * Reason over your data and facilitate use cases like classification, summarization, and data enrichment on your existing relational data in PostgreSQL ([see an example](/docs/openai.md)).
 
-**Useful utilities:**
+## Useful utilities
 * Load datasets from Hugging Face into your database with [ai.load_dataset](/docs/load_dataset_from_huggingface.md).
 
 # Resources
-**Why we built it:**
+## Why we built it
 - [Vector Databases Are the Wrong Abstraction](https://www.timescale.com/blog/vector-databases-are-the-wrong-abstraction/)
 - [pgai: Giving PostgreSQL Developers AI Engineering Superpowers](http://www.timescale.com/blog/pgai-giving-postgresql-developers-ai-engineering-superpowers)
 
-**Quick start guides:**
+## Quick start guides
 - [The quick start with Ollama guide above](#quick-start)
 - [Quick start with OpenAI](/docs/vectorizer-quick-start-openai.md)
 - [Quick start with VoyageAI](/docs/vectorizer-quick-start-voyage.md)
 
-**Tutorials about pgai vectorizer:**
+## Tutorials about pgai vectorizer
 - [How to Automatically Create & Update Embeddings in PostgreSQL—With One SQL Query](https://www.timescale.com/blog/how-to-automatically-create-update-embeddings-in-postgresql/)
 - [video] [Auto Create and Sync Vector Embeddings in 1 Line of SQL](https://www.youtube.com/watch?v=ZoC2XYol6Zk)
 - [Which OpenAI Embedding Model Is Best for Your RAG App With Pgvector?](https://www.timescale.com/blog/which-openai-embedding-model-is-best/)
 - [Which RAG Chunking and Formatting Strategy Is Best for Your App With Pgvector](https://www.timescale.com/blog/which-rag-chunking-and-formatting-strategy-is-best/)
 - [Parsing All the Data With Open-Source Tools: Unstructured and Pgai](https://www.timescale.com/blog/parsing-all-the-data-with-open-source-tools-unstructured-and-pgai/)
 
-**Tutorials about pgai model calling:**
+## Tutorials about pgai model calling
 - [In-Database AI Agents: Teaching Claude to Use Tools With Pgai](https://www.timescale.com/blog/in-database-ai-agents-teaching-claude-to-use-tools-with-pgai/)
 - [Build Search and RAG Systems on PostgreSQL Using Cohere and Pgai](https://www.timescale.com/blog/build-search-and-rag-systems-on-postgresql-using-cohere-and-pgai/)
 - [Use Open-Source LLMs in PostgreSQL With Ollama and Pgai](https://www.timescale.com/blog/use-open-source-llms-in-postgresql-with-ollama-and-pgai/)
 
-**Contributing**: We welcome contributions to pgai! See the [Contributing](/CONTRIBUTING.md) page for more information.
+## Contributing
+We welcome contributions to pgai! See the [Contributing](/CONTRIBUTING.md) page for more information.
 
 # Automated embedding and semantic search
 
@@ -309,13 +310,18 @@ Model calling is a feature of pgai that allows you to call LLM models from SQL. 
 
 The following models are supported (click on the model to learn more):
 
-| **Model**       | **Tokenize** | **Embed** | **Chat Complete** | **Generate** | **Moderate** | **Classify** | **Rerank** |
-|------------------|:------------:|:---------:|:-----------------:|:------------:|:------------:|:------------:|:----------:|
-| **[Ollama](./docs/ollama.md)**       |              |     ✔️    |         ✔️         |      ✔️      |              |              |           |
-| **[OpenAI](./docs/openai.md)**       |      ✔️️      |     ✔️    |         ✔️         |              |      ✔️      |              |           |
-| **[Anthropic](./docs/anthropic.md)**    |              |           |                    |      ✔️      |              |              |           |
-| **[Cohere](./docs/cohere.md)**       |      ✔️      |     ✔️    |         ✔️         |              |              |      ✔️      |     ✔️     |
-| **[Voyage AI](./docs/voyageai.md)** |              |     ✔️    |                  |              |              |              |           |
+| **Model**                                            | **Tokenize** | **Embed** | **Chat Complete** | **Generate** | **Moderate** | **Classify** | **Rerank** |
+|------------------------------------------------------|:------------:|:---------:|:-----------------:|:------------:|:------------:|:------------:|:----------:|
+| **[Ollama](./docs/ollama.md)**                       |              |    ✔️     |        ✔️         |      ✔️      |              |              |            |
+| **[OpenAI](./docs/openai.md)**                       |     ✔️️      |    ✔️     |        ✔️         |              |      ✔️      |              |            |
+| **[Anthropic](./docs/anthropic.md)**                 |              |           |                   |      ✔️      |              |              |            |
+| **[Cohere](./docs/cohere.md)**                       |      ✔️      |    ✔️     |        ✔️         |              |              |      ✔️      |     ✔️     |
+| **[Voyage AI](./docs/voyageai.md)**                  |              |    ✔️     |                   |              |              |              |            |
+| **[Huggingface (with LiteLLM)](./docs/litellm.md)**  |              |    ✔️     |                   |              |              |              |            |
+| **[Mistral (with LiteLLM)](./docs/litellm.md)**      |              |    ✔️     |                   |              |              |              |            |
+| **[Azure OpenAI (with LiteLLM)](./docs/litellm.md)** |              |    ✔️     |                   |              |              |              |            |
+| **[AWS Bedrock (with LiteLLM)](./docs/litellm.md)**  |              |    ✔️     |                   |              |              |              |            |
+| **[Vertex AI (with LiteLLM)](./docs/litellm.md)**    |              |    ✔️     |                   |              |              |              |            |
 
 Some examples:
 - Learn how to [moderate](/docs/moderate.md) content directly in the database using triggers and background jobs. 
