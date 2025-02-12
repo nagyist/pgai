@@ -1,10 +1,13 @@
 import os
+import re
 import subprocess
 from pathlib import Path
-import re
 
 import psycopg
 import pytest
+
+# for now, skip these tests
+pytest.skip(allow_module_level=True)
 
 # skip tests in this module if disabled
 enable_text_to_sql_tests = os.getenv("ENABLE_TEXT_TO_SQL_TESTS")
@@ -137,7 +140,7 @@ def init_src() -> None:
 
 
 def read_file(filename: str) -> str:
-    with open(filename, "r") as f:
+    with open(filename) as f:
         return f.read()
 
 

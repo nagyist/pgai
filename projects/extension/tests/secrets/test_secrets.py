@@ -24,7 +24,7 @@ def test_reveal_secrets():
             False,
         ),
         (
-            "SET ai.external_functions_executor_url='http://localhost:8000'",
+            "SET ai.external_functions_executor_url='http://0.0.0.0:8000'",
             """
             select ai.reveal_secret('OPENAI_API_KEY')
             """,
@@ -41,7 +41,7 @@ def test_reveal_secrets():
         ),
         (
             # guc overrides secret
-            "SET ai.openai_api_key='test_guc'; SET ai.external_functions_executor_url='http://localhost:8000'",
+            "SET ai.openai_api_key='test_guc'; SET ai.external_functions_executor_url='http://0.0.0.0:8000'",
             """
             select ai.reveal_secret('OPENAI_API_KEY')
             """,
@@ -50,7 +50,7 @@ def test_reveal_secrets():
         ),
         (
             # guc with different name doesn't override
-            "SET ai.openai_api_key='test_guc'; SET ai.external_functions_executor_url='http://localhost:8000'",
+            "SET ai.openai_api_key='test_guc'; SET ai.external_functions_executor_url='http://0.0.0.0:8000'",
             """
             select ai.reveal_secret('OPENAI_API_KEY_2')
             """,
@@ -76,7 +76,7 @@ def test_reveal_secrets():
             False,
         ),
         (
-            "SET ai.external_functions_executor_url='http://localhost:8000'",
+            "SET ai.external_functions_executor_url='http://0.0.0.0:8000'",
             """
             select ai.reveal_secret('DOES_NOT_EXIST')
             """,
@@ -84,7 +84,7 @@ def test_reveal_secrets():
             False,
         ),
         (
-            "SET ai.external_functions_executor_url='http://localhost:8000'",
+            "SET ai.external_functions_executor_url='http://0.0.0.0:8000'",
             """
             select ai.reveal_secret('ERROR_SECRET')
             """,
@@ -97,7 +97,10 @@ def test_reveal_secrets():
             with con.cursor() as cur:
                 cur.execute(setup)
                 if is_error:
-                    with pytest.raises(Exception):
+                    with pytest.raises(
+                        psycopg.errors.InternalError_,
+                        match="plpy.Error: failed to reveal secret 'ERROR_SECRET'",
+                    ):
                         cur.execute(query)
                 else:
                     cur.execute(query)
@@ -109,9 +112,7 @@ def test_reveal_secret_cache():
     with psycopg.connect(db_url("test")) as con:
         with con.cursor() as cur:
             # enable cache, and populate it
-            cur.execute(
-                "SET ai.external_functions_executor_url='http://localhost:8000'"
-            )
+            cur.execute("SET ai.external_functions_executor_url='http://0.0.0.0:8000'")
             cur.execute("select ai.reveal_secret('OPENAI_API_KEY')")
             actual = cur.fetchone()[0]
             assert actual == "test"

@@ -1,26 +1,29 @@
 DROP DATABASE
 CREATE DATABASE
 CREATE EXTENSION
-                                                                                                     Objects in extension "ai"
-                                                                                                         Object description                                                                                                         
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                                                                                                                       Objects in extension "ai"
+                                                                                                                          Object description                                                                                                                           
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
  event trigger _vectorizer_handle_drops
  function ai.anthropic_generate(text,jsonb,integer,text,text,text,double precision,integer,text,text,text[],double precision,jsonb,jsonb,integer,double precision)
  function ai.anthropic_list_models(text,text,text)
  function ai.chunking_character_text_splitter(name,integer,integer,text,boolean)
  function ai.chunking_recursive_character_text_splitter(name,integer,integer,text[],boolean)
- function ai.cohere_chat_complete(text,text,text,text,text,jsonb,text,text,jsonb,boolean,jsonb,text,double precision,integer,integer,integer,double precision,integer,text[],double precision,double precision,jsonb,jsonb,boolean)
+ function ai.chunk_text_recursively(text,integer,integer,text[],boolean)
+ function ai.chunk_text(text,integer,integer,text,boolean)
+ function ai.cohere_chat_complete(text,jsonb,text,text,jsonb,jsonb,jsonb,jsonb,text,integer,text[],double precision,integer,double precision,double precision,integer,double precision,boolean,text,boolean)
  function ai.cohere_classify_simple(text,text[],text,text,jsonb,text)
  function ai.cohere_classify(text,text[],text,text,jsonb,text)
  function ai.cohere_detokenize(text,integer[],text,text)
  function ai.cohere_embed(text,text,text,text,text,text)
  function ai.cohere_list_models(text,text,text,boolean)
- function ai.cohere_rerank_simple(text,text,jsonb,text,text,integer,integer)
- function ai.cohere_rerank(text,text,jsonb,text,text,integer,text[],boolean,integer)
+ function ai.cohere_rerank_simple(text,text,text[],text,text,integer,integer)
+ function ai.cohere_rerank(text,text,text[],text,text,integer,integer)
  function ai.cohere_tokenize(text,text,text,text)
  function ai.create_vectorizer(regclass,name,jsonb,jsonb,jsonb,jsonb,jsonb,jsonb,name,name,name,name,name,name,name[],boolean)
  function ai.disable_vectorizer_schedule(integer)
  function ai.drop_vectorizer(integer,boolean)
+ function ai.embedding_litellm(text,integer,text,jsonb)
  function ai.embedding_ollama(text,integer,text,jsonb,text)
  function ai.embedding_openai(text,integer,text,text,text)
  function ai.embedding_voyageai(text,integer,text,text)
@@ -35,21 +38,29 @@ CREATE EXTENSION
  function ai.indexing_diskann(integer,text,integer,integer,double precision,integer,integer,boolean)
  function ai.indexing_hnsw(integer,text,integer,integer,boolean)
  function ai.indexing_none()
+ function ai.litellm_embed(text,text,text,text,jsonb)
+ function ai.litellm_embed(text,text[],text,text,jsonb)
  function ai.load_dataset_multi_txn(text,text,text,name,name,text,jsonb,integer,integer,integer,jsonb)
  function ai.load_dataset(text,text,text,name,name,text,jsonb,integer,integer,jsonb)
- function ai.ollama_chat_complete(text,jsonb,text,text,jsonb)
+ function ai.ollama_chat_complete(text,jsonb,text,text,jsonb,jsonb,jsonb)
  function ai.ollama_embed(text,text,text,text,jsonb)
  function ai.ollama_generate(text,text,text,bytea[],text,jsonb,text,text,integer[])
  function ai.ollama_list_models(text)
  function ai.ollama_ps(text)
  function ai.openai_chat_complete_simple(text,text,text)
- function ai.openai_chat_complete(text,jsonb,text,text,text,double precision,jsonb,boolean,integer,integer,integer,double precision,jsonb,integer,text,double precision,double precision,jsonb,jsonb,text)
+ function ai.openai_chat_complete(text,jsonb,text,text,text,double precision,jsonb,boolean,integer,integer,integer,integer,double precision,jsonb,integer,text,double precision,double precision,jsonb,text,text,jsonb,jsonb,jsonb,double precision)
+ function ai.openai_chat_complete_with_raw_response(text,jsonb,text,text,text,double precision,jsonb,boolean,integer,integer,integer,integer,double precision,jsonb,integer,text,double precision,double precision,jsonb,text,text,jsonb,jsonb,jsonb,double precision)
  function ai.openai_detokenize(text,integer[])
- function ai.openai_embed(text,integer[],text,text,text,integer,text)
- function ai.openai_embed(text,text,text,text,text,integer,text)
- function ai.openai_embed(text,text[],text,text,text,integer,text)
- function ai.openai_list_models(text,text,text)
- function ai.openai_moderate(text,text,text,text,text)
+ function ai.openai_embed(text,integer[],text,text,text,integer,text,jsonb,jsonb,jsonb,double precision)
+ function ai.openai_embed(text,text,text,text,text,integer,text,jsonb,jsonb,jsonb,double precision)
+ function ai.openai_embed(text,text[],text,text,text,integer,text,jsonb,jsonb,jsonb,double precision)
+ function ai.openai_embed_with_raw_response(text,integer[],text,text,text,integer,text,jsonb,jsonb,jsonb,double precision)
+ function ai.openai_embed_with_raw_response(text,text,text,text,text,integer,text,jsonb,jsonb,jsonb,double precision)
+ function ai.openai_embed_with_raw_response(text,text[],text,text,text,integer,text,jsonb,jsonb,jsonb,double precision)
+ function ai.openai_list_models(text,text,text,jsonb,jsonb,double precision)
+ function ai.openai_list_models_with_raw_response(text,text,text,jsonb,jsonb,double precision)
+ function ai.openai_moderate(text,text,text,text,text,jsonb,jsonb,jsonb,double precision)
+ function ai.openai_moderate_with_raw_response(text,text,text,text,text,jsonb,jsonb,jsonb,double precision)
  function ai.openai_tokenize(text,text)
  function ai.processing_default(integer,integer)
  function ai._resolve_indexing_default()
@@ -95,7 +106,7 @@ CREATE EXTENSION
  table ai.vectorizer_errors
  view ai.secret_permissions
  view ai.vectorizer_status
-(91 rows)
+(102 rows)
 
                                     Table "ai._secret_permissions"
  Column | Type | Collation | Nullable | Default | Storage  | Compression | Stats target | Description 
@@ -174,6 +185,7 @@ View definition:
  queue_schema  | name    |           |          |                                  | plain    |             |              | 
  queue_table   | name    |           |          |                                  | plain    |             |              | 
  config        | jsonb   |           | not null |                                  | extended |             |              | 
+ disabled      | boolean |           | not null | false                            | plain    |             |              | 
 Indexes:
     "vectorizer_pkey" PRIMARY KEY, btree (id)
     "vectorizer_target_schema_target_table_key" UNIQUE CONSTRAINT, btree (target_schema, target_table)
@@ -221,6 +233,7 @@ primary key, btree, for table "ai.vectorizer"
  target_table  | text    | C         |          |         | extended | 
  view          | text    | C         |          |         | extended | 
  pending_items | bigint  |           |          |         | plain    | 
+ disabled      | boolean |           |          |         | plain    | 
 View definition:
  SELECT id,
     format('%I.%I'::text, source_schema, source_table) AS source_table,
@@ -229,7 +242,8 @@ View definition:
         CASE
             WHEN queue_table IS NOT NULL AND has_table_privilege(CURRENT_USER, format('%I.%I'::text, queue_schema, queue_table), 'select'::text) THEN ai.vectorizer_queue_pending(id)
             ELSE NULL::bigint
-        END AS pending_items
+        END AS pending_items,
+    disabled
    FROM ai.vectorizer v;
 
           Index "ai.vectorizer_target_schema_target_table_key"

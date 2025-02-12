@@ -20,12 +20,13 @@ To make changes to the pgai extension, do the following in your developer enviro
    git clone git@github.com:timescale/pgai.git
    cd pgai
    ```
-* Ollama only:
+* Ollama and Text to SQL only:
    * [Run Ollama somewhere accessible from your developer environment](https://github.com/ollama/ollama/blob/main/README.md#quickstart).
    * [Pull the `llama3` and  `llava:7b` models](https://github.com/ollama/ollama/blob/main/README.md#pull-a-model):
      ```shell
      ollama pull llama3
      ollama pull llava:7b
+     ollama pull smollm:135m
      ```
 
 ## The pgai extension development workflow
@@ -55,7 +56,7 @@ To make changes to pgai:
 
          ```bash
          just ext build
-         just ext install
+         just ext install-all
          ```
 
       1. Run the unit tests
@@ -189,30 +190,30 @@ The SQL is organized into:
   [wrapped](./projects/extension/sql/migration.sql). Each migration id is tracked in the `migration` table. For more information,
   see [./projects/extension/sql/head.sql](./projects/extension/sql/head.sql).
 
-* **Built scripts**: `./projects/extension/sql/ai--*.sql`
+* **Built scripts**: `./projects/extension/sql/output/ai--*.sql`
 
   `just ext build` "compiles" the idempotent and incremental scripts into the final
   form that is installed into a postgres environment as an extension. A script
-  named `./projects/extension/sql/ai--<current-version>.sql` is built. For every prior version
+  named `./projects/extension/sql/output/ai--<current-version>.sql` is built. For every prior version
   (other than 0.1.0, 0.2.0, and 0.3.0), the file is copied to
-  `./projects/extension/sql/ai--<prior-version>--<current-version>.sql` to give postgres an upgrade
-  path from prior versions. The `./projects/extension/sql/ai.control` is also ensured to have the
+  `./projects/extension/sql/output/ai--<prior-version>--<current-version>.sql` to give postgres an upgrade
+  path from prior versions. The `./projects/extension/sql/output/ai.control` is also ensured to have the
   correct version listed in it.
 
-  When you release a new version, add the `./projects/extension/sql/ai--*<current-version>.sql` scripts to this repo with your
+  When you release a new version, add the `./projects/extension/sql/output/ai--*<current-version>.sql` scripts to this repo with your
   pull request. The scripts from prior versions are checked in and should not be modified after
   having been released.
 
 If you are exclusively working on SQL, you may want to forego the high-level just
 recipes in favor of the SQL-specific just recipes:
 
-1. **Clean your environment**: run `just ext clean-sql` to delete `./projects/extension/sql/ai--*<current-version>.sql`.
+1. **Clean your environment**: run `just ext clean-sql` to delete `./projects/extension/sql/output/ai--*<current-version>.sql`.
 
    The `<current-version>` is defined in `versions()` in [./projects/extension/build.py](./projects/extension/build.py).
 
 1. **Build pgai**: run `just ext build` to compile idempotent and incremental scripts
-   into `./projects/extension/sql/ai--*<current-version>.sql`.
-1. **Install pgai**: run `just ext install-sql` to install `./projects/extension/sql/ai--*.sql` and `./projects/extension/sql/ai*.control` into your local
+   into `./projects/extension/sql/output/ai--*<current-version>.sql`.
+1. **Install pgai**: run `just ext install-sql-all` to install `./projects/extension/sql/output/ai--*.sql` and `./projects/extension/sql/output/ai*.control` into your local
    Postgres environment.
 
 ### Develop Python in the pgai extension
@@ -318,19 +319,14 @@ original code is defined. These changes have to be included in the gated files.
 While this may be somewhat awkward, it works, and it clearly delineates what 
 changes to existing stuff are required for a new feature.
 
-### Versions prior to 0.4.0
-
-Prior to pgai v0.4.0, Python dependencies were installed system-wide. Until pgai versions 0.1 - 0.3 are deprecated
-[old dependencies](./src/old_requirements.txt) are installed system-wide.
-
-### Release the extension
+## Release the extension
 
 1. Run `just ext clean-sql` in order to remove any prior generated dev sql.
 2. Edit the [build.py](projects/extension/build.py).
    - Set the version to be released as the first element of the array returned by `versions` function. I.e. `"0.7.0",  # released`.
-3. Run `just ext build-release`. This will generate, among other tasks, the final .sql files in `projects/extension/sql` and update the version in [__init__.py](projects/extension/ai/__init__.py).
+3. Run `just ext build-release`. This will generate, among other tasks, the final .sql files in `projects/extension/sql/output` and update the version in [__init__.py](projects/extension/ai/__init__.py).
 4. As those files are git-ignored, you need to add those to the git index by forcing the addition. 
-   - Run `git add -f projects/extension/sql/ai--*<YOUR_NEW_VERSION_HERE>.sql`.
+   - Run `git add -f projects/extension/sql/output/ai--*<YOUR_NEW_VERSION_HERE>.sql`.
 5. Craft the release notes for the new version of the extension. Those should be added into [projects/extension/RELEASE_NOTES.md](projects/extension/RELEASE_NOTES.md).
    - As we are not using release-please, those notes are not automatically generated. Instead, we need to manually add those.  
      You can use the output of the following command to craft the release notes:
@@ -339,6 +335,11 @@ Prior to pgai v0.4.0, Python dependencies were installed system-wide. Until pgai
      ```
 6. Create a PR with all the modified files. Use a commit message such as `chore: release extension <YOUR_NEW_VERSION_HERE>`.
 7. Once the PR is merged, create a new [github release](https://github.com/timescale/pgai/releases) using a new tag following the format `extension-<version>`. Copy the release notes for this version into the GitHub release description.
+8. Prepare the repo for the next development cycle
+   - Add a new version (with the patch version incremented) to the top of the versions list in `build.py`, e.g. `0.8.1-dev`
+   - Run `just ext build-release` to re-generate the `sql/ai.control` and `ai/__init__.py` files
+   - Add and commit the `build.py`, `sql/ai.control`, and `ai/__init__.py` files
+   - Open a new PR with this commit
 8. Create a new PR on the following repositories replacing the value of the `PGAI_VERSION` variable located in the `Makefile` files with the new version:
    - [timescale/timescaledb-docker](https://github.com/timescale/timescaledb-docker/edit/main/Makefile)
    - [timescale/timescaledb-docker-ha](https://github.com/timescale/timescaledb-docker-ha/edit/master/Makefile)

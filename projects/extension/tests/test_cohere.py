@@ -3,7 +3,6 @@ import os
 import psycopg
 import pytest
 
-
 # skip tests in this module if disabled
 enable_cohere_tests = os.getenv("COHERE_API_KEY")
 if not enable_cohere_tests or enable_cohere_tests == "0":
@@ -37,7 +36,7 @@ def cur_with_api_key(cohere_api_key, cur) -> psycopg.Cursor:
 def cur_with_external_functions_executor_url(cur) -> psycopg.Cursor:
     with cur:
         cur.execute(
-            "select set_config('ai.external_functions_executor_url', 'http://localhost:8000', false) is not null",
+            "select set_config('ai.external_functions_executor_url', 'http://0.0.0.0:8000', false) is not null",
         )
         yield cur
 
@@ -234,6 +233,9 @@ def test_cohere_embed_no_key(cur_with_api_key):
     assert actual == 384
 
 
+@pytest.mark.skip(
+    reason="classification can only be performed on fine-tuned models, which we don't have"
+)
 def test_cohere_classify(cur_with_api_key):
     cur_with_api_key.execute("""
         with examples(example, label) as
@@ -260,6 +262,9 @@ def test_cohere_classify(cur_with_api_key):
     assert actual == """{"bird": "animal", "corn": "food", "airplane": "machine"}"""
 
 
+@pytest.mark.skip(
+    reason="classification can only be performed on fine-tuned models, which we don't have"
+)
 def test_cohere_classify_simple(cur_with_api_key):
     cur_with_api_key.execute("""
         with examples(example, label) as
@@ -290,18 +295,17 @@ def test_cohere_rerank(cur_with_api_key):
           select ai.cohere_rerank
           ( 'rerank-english-v3.0'
           , 'How long does it take for two programmers to work on something?'
-          , jsonb_build_array
-            ( $$Good programmers don't just write programs. They build a working vocabulary.$$
+          , array
+            [ $$Good programmers don't just write programs. They build a working vocabulary.$$
             , 'One of the best programming skills you can have is knowing when to walk away for awhile.'
             , 'What one programmer can do in one month, two programmers can do in two months.'
             , 'how much wood would a woodchuck chuck if a woodchuck could chuck wood?'
-            )
-          , return_documents=>true
+            ]
           ) as actual
         )
         select y."index" as actual
         from x
-        cross join lateral jsonb_to_recordset(x.actual->'results') y("index" int, "document" jsonb, relevance_score float8)
+        cross join lateral jsonb_to_recordset(x.actual->'results') y("index" int, relevance_score float8)
         order by y.relevance_score desc
         limit 1
     """)
@@ -314,24 +318,23 @@ def test_cohere_rerank_advanced(cur_with_api_key):
         with docs(id, quote, author) as
         (
             values
-              (1, $$Good programmers don't just write programs. They build a working vocabulary.$$, 'Guy Steele')
-            , (2, 'One of the best programming skills you can have is knowing when to walk away for awhile.', 'Oscar Godson')
-            , (3, 'What one programmer can do in one month, two programmers can do in two months.', 'Frederick P. Brooks')
-            , (4, 'how much wood would a woodchuck chuck if a woodchuck could chuck wood?', 'some joker')
+              (0, $$Good programmers don't just write programs. They build a working vocabulary.$$, 'Guy Steele')
+            , (1, 'One of the best programming skills you can have is knowing when to walk away for awhile.', 'Oscar Godson')
+            , (2, 'What one programmer can do in one month, two programmers can do in two months.', 'Frederick P. Brooks')
+            , (3, 'how much wood would a woodchuck chuck if a woodchuck could chuck wood?', 'some joker')
         )
         , x as
         (
             select ai.cohere_rerank
             ( 'rerank-english-v3.0'
             , 'How long does it take for two programmers to work on something?'
-            , (select jsonb_agg(x) from docs x)
-            , rank_fields=>array['quote']
-            , return_documents=>true
+            , (select array_agg(x.quote order by x.id) from docs x)
             ) as actual
         )
-        select y."document"->>'author' as actual
+        select docs.author as actual
         from x
-        cross join lateral jsonb_to_recordset(x.actual->'results') y("index" int, "document" jsonb, relevance_score float8)
+        cross join lateral jsonb_to_recordset(x.actual->'results') y("index" int, relevance_score float8)
+        inner join docs on (y."index" = docs.id)
         order by y.relevance_score desc
         limit 1
     """)
@@ -345,12 +348,12 @@ def test_cohere_rerank_simple(cur_with_api_key):
         from ai.cohere_rerank_simple
         ( 'rerank-english-v3.0'
         , 'How long does it take for two programmers to work on something?'
-        , jsonb_build_array
-          ( $$Good programmers don't just write programs. They build a working vocabulary.$$
+        , array
+          [ $$Good programmers don't just write programs. They build a working vocabulary.$$
           , 'One of the best programming skills you can have is knowing when to walk away for awhile.'
           , 'What one programmer can do in one month, two programmers can do in two months.'
           , 'how much wood would a woodchuck chuck if a woodchuck could chuck wood?'
-          )
+          ]
         ) x
         order by relevance_score asc
         limit 1
@@ -363,9 +366,17 @@ def test_cohere_chat_complete(cur_with_api_key):
     cur_with_api_key.execute("""
         select ai.cohere_chat_complete
         ( 'command-r-plus'
-        , 'How much wood would a woodchuck chuck if a woodchuck could chuck wood?'
+        , jsonb_build_array
+          ( jsonb_build_object
+            ( 'role', 'user'
+            , 'content', 'How much wood would a woodchuck chuck if a woodchuck could chuck wood?'
+            )
+          )
         , seed=>42
-        )->>'text' is not null
+        , temperature=>0.0
+        )->'message'->'content'->0->>'text'
     """)
     actual = cur_with_api_key.fetchone()[0]
-    assert actual is True
+    assert (
+        actual == "As much wood as a woodchuck would, if a woodchuck could chuck wood."
+    )

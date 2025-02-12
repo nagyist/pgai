@@ -14,7 +14,7 @@ ci: docker-build docker-run
   docker exec pgai-ext just build
   docker exec pgai-ext just lint
   docker exec pgai-ext just format-py
-  docker exec pgai-ext just install
+  docker exec pgai-ext just install-all
   docker exec -d pgai-ext just test-server
   docker exec pgai-ext just test
   build.py docker-stop
@@ -35,11 +35,17 @@ build:
 install:
 	@PG_BIN={{PG_BIN}} ./build.py install
 
+install-all:
+	@PG_BIN={{PG_BIN}} ./build.py install all
+
 build-install:
 	@PG_BIN={{PG_BIN}} ./build.py build-install
 
 install-sql:
 	@PG_BIN={{PG_BIN}} ./build.py install-sql
+
+install-sql-all:
+	@PG_BIN={{PG_BIN}} ./build.py install-sql all
 
 install-prior-py:
 	@./build.py install-prior-py
@@ -115,3 +121,28 @@ docker-shell:
 # Launches a psql shell in the container
 psql-shell:
 	@docker exec -it -u postgres pgai-ext /bin/bash -c "set -e; if [ -f .env ]; then set -a; source .env; set +a; fi; psql"
+
+# Runs tests that rely on snapshots against PG 17 and 16 and updates the
+# expected files with the generated actual files.
+update-snapshots: docker-rm docker-build docker-run
+    #!/usr/bin/env bash
+    set -uo pipefail
+    docker exec pgai-ext just install-py install-sql
+    docker exec pgai-ext uv run pytest tests/contents/test_contents.py
+    rm tests/contents/output17.expected
+    mv tests/contents/output17.actual tests/contents/output17.expected
+    docker exec pgai-ext uv run pytest tests/privileges/test_privileges.py
+    for f in tests/privileges/*.actual; do
+        if [ -f "$f" ]; then
+            expected="${f%.actual}.expected"
+            rm -f "$expected"
+            mv "$f" "$expected"
+        fi
+    done
+    just docker-rm
+    PG_MAJOR=16 just docker-build docker-run
+    docker exec pgai-ext just install-py install-sql
+    docker exec pgai-ext uv run pytest tests/contents/test_contents.py
+    rm tests/contents/output16.expected
+    mv tests/contents/output16.actual tests/contents/output16.expected
+    just docker-rm

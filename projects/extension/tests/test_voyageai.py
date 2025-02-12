@@ -3,7 +3,6 @@ import os
 import psycopg
 import pytest
 
-
 # skip tests in this module if disabled
 enable_voyageai_tests = os.getenv("VOYAGE_API_KEY")
 if not enable_voyageai_tests or enable_voyageai_tests == "0":
@@ -25,7 +24,8 @@ def cur() -> psycopg.Cursor:
 
 def test_voyageai_fails_without_secret(cur, voyageai_api_key):
     with pytest.raises(
-        psycopg.errors.InternalError_, match="missing VOYAGE_API_KEY secret"
+        psycopg.errors.InternalError_,
+        match="missing VOYAGE_API_KEY secret",
     ) as _:
         cur.execute(
             """

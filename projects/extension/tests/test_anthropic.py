@@ -3,7 +3,6 @@ import os
 import psycopg
 import pytest
 
-
 # skip tests in this module if disabled
 enable_anthropic_tests = os.getenv("ANTHROPIC_API_KEY")
 if not enable_anthropic_tests or enable_anthropic_tests == "0":
@@ -37,7 +36,7 @@ def cur_with_api_key(anthropic_api_key, cur) -> psycopg.Cursor:
 def cur_with_external_functions_executor_url(cur) -> psycopg.Cursor:
     with cur:
         cur.execute(
-            "select set_config('ai.external_functions_executor_url', 'http://localhost:8000', false) is not null",
+            "select set_config('ai.external_functions_executor_url', 'http://0.0.0.0:8000', false) is not null",
         )
         yield cur
 
